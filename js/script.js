@@ -1,38 +1,108 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const header = document.getElementById('header');
+  const backToTop = document.getElementById('back-to-top');
+
+  /* ===== Preloader ===== */
+  const preloader = document.getElementById('preloader');
+  const hidePreloader = () => {
+    if (!preloader) return;
+    preloader.classList.add('is-hidden');
+    document.body.classList.remove('is-loading');
+  };
+
+  window.addEventListener('load', () => {
+    window.setTimeout(hidePreloader, 650);
+  });
+  window.setTimeout(hidePreloader, 2600);
 
   /* ===== Header scroll state ===== */
-  const header = document.getElementById('header');
   const onScroll = () => {
-    header.classList.toggle('scrolled', window.scrollY > 40);
-    backToTop.classList.toggle('visible', window.scrollY > 500);
+    if (header) {
+      header.classList.toggle('scrolled', window.scrollY > 40);
+    }
+    if (backToTop) {
+      backToTop.classList.toggle('visible', window.scrollY > 500);
+    }
   };
-  window.addEventListener('scroll', onScroll);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 
   /* ===== Mobile menu ===== */
   const hamburger = document.getElementById('hamburger');
   const nav = document.getElementById('nav');
-  hamburger.addEventListener('click', () => {
-    const isOpen = nav.classList.toggle('open');
-    hamburger.setAttribute('aria-expanded', isOpen);
-  });
-  nav.querySelectorAll('.nav__link').forEach(link => {
-    link.addEventListener('click', () => {
-      nav.classList.remove('open');
-      hamburger.setAttribute('aria-expanded', 'false');
+  if (hamburger && nav) {
+    hamburger.addEventListener('click', () => {
+      const isOpen = nav.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', String(isOpen));
     });
-  });
+
+    nav.querySelectorAll('.nav__link').forEach(link => {
+      link.addEventListener('click', () => {
+        nav.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+
+  /* ===== Hero title typewriter ===== */
+  const typewriter = document.getElementById('hero-typewriter');
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typewriter && !prefersReducedMotion) {
+    const phrases = [
+      '2 Tallas de Cintura y Abdomen en Tan Solo 4 Días',
+      'Una Figura Más Definida con Compuestos Herbales',
+      'Resultados Visibles con la Faja de Yeso Flexible'
+    ];
+    let phraseIndex = 0;
+    let letterIndex = 0;
+    let deleting = false;
+
+    const type = () => {
+      const phrase = phrases[phraseIndex];
+      typewriter.textContent = phrase.slice(0, letterIndex);
+
+      if (!deleting && letterIndex < phrase.length) {
+        letterIndex += 1;
+        window.setTimeout(type, 48);
+        return;
+      }
+
+      if (!deleting && letterIndex === phrase.length) {
+        deleting = true;
+        window.setTimeout(type, 1500);
+        return;
+      }
+
+      if (deleting && letterIndex > 0) {
+        letterIndex -= 1;
+        window.setTimeout(type, 24);
+        return;
+      }
+
+      deleting = false;
+      phraseIndex = (phraseIndex + 1) % phrases.length;
+      window.setTimeout(type, 360);
+    };
+
+    type();
+  }
 
   /* ===== Reveal on scroll ===== */
   const revealItems = document.querySelectorAll('.reveal');
-  const revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        revealObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15 });
-  revealItems.forEach(item => revealObserver.observe(item));
+  if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px' });
+
+    revealItems.forEach(item => revealObserver.observe(item));
+  } else {
+    revealItems.forEach(item => item.classList.add('is-visible'));
+  }
 
   /* ===== Countdown timer (48h rolling offer) ===== */
   const countdownEl = document.getElementById('countdown');
@@ -51,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const secondsEl = document.getElementById('cd-seconds');
     const pad = n => String(n).padStart(2, '0');
 
+    let timer;
     const tick = () => {
       const remaining = Math.max(0, deadline - Date.now());
       const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
@@ -58,18 +129,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const minutes = Math.floor((remaining / (1000 * 60)) % 60);
       const seconds = Math.floor((remaining / 1000) % 60);
 
-      daysEl.textContent = pad(days);
-      hoursEl.textContent = pad(hours);
-      minutesEl.textContent = pad(minutes);
-      secondsEl.textContent = pad(seconds);
+      if (daysEl) daysEl.textContent = pad(days);
+      if (hoursEl) hoursEl.textContent = pad(hours);
+      if (minutesEl) minutesEl.textContent = pad(minutes);
+      if (secondsEl) secondsEl.textContent = pad(seconds);
 
       if (remaining <= 0) {
-        clearInterval(timer);
+        if (timer) window.clearInterval(timer);
         localStorage.removeItem(storageKey);
       }
     };
     tick();
-    const timer = setInterval(tick, 1000);
+    timer = window.setInterval(tick, 1000);
   }
 
   /* ===== FAQ accordion ===== */
@@ -80,10 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       document.querySelectorAll('.accordion__trigger').forEach(t => {
         t.setAttribute('aria-expanded', 'false');
-        t.nextElementSibling.style.maxHeight = null;
+        if (t.nextElementSibling) {
+          t.nextElementSibling.style.maxHeight = null;
+        }
       });
 
-      if (!isOpen) {
+      if (!isOpen && panel) {
         trigger.setAttribute('aria-expanded', 'true');
         panel.style.maxHeight = panel.scrollHeight + 'px';
       }
@@ -93,21 +166,24 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== Contact form (front-end only) ===== */
   const contactForm = document.getElementById('contact-form');
   const formNote = document.getElementById('form-note');
-  if (contactForm) {
+  if (contactForm && formNote) {
     contactForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      formNote.textContent = '¡Gracias! Un asesor te contactará muy pronto para confirmar tu 50% de descuento.';
+      formNote.textContent = 'Gracias. Un asesor te contactará muy pronto para confirmar tu 50% de descuento.';
       contactForm.reset();
     });
   }
 
   /* ===== Back to top ===== */
-  const backToTop = document.getElementById('back-to-top');
-  backToTop.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  if (backToTop) {
+    backToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 
   /* ===== Footer year ===== */
-  document.getElementById('year').textContent = new Date().getFullYear();
-
+  const year = document.getElementById('year');
+  if (year) {
+    year.textContent = new Date().getFullYear();
+  }
 });
