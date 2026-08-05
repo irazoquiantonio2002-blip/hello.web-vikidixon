@@ -600,6 +600,27 @@ ul { list-style: none; }
   filter: saturate(1.08) contrast(1.03);
 }
 
+/* ===== Videos de resultados ===== */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.video-card {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-strong);
+  background: #000;
+}
+
+.video-card video {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: cover;
+}
+
 /* ===== Experiencia ===== */
 .experience-badges {
   display: flex;
@@ -979,6 +1000,7 @@ ul { list-style: none; }
   .results-gallery img:nth-child(6) { grid-column: span 1; grid-row: span 1; }
   .visual-strip__track { grid-template-columns: repeat(3, 1fr); }
   .social-grid { grid-template-columns: 1fr; }
+  .video-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
